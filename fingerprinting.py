@@ -1,30 +1,60 @@
-import pandas as pd
+from scapy.all import *
 
-# Cargar el archivo CSV
-df = pd.read_csv('simulacion_paquetesTCP_Hping3.csv')
+#cambiar ip 
+target_ip = "192.168.0.103"
+open_port = 80   
+closed_port = 81  
 
-# Mostrar las primeras filas del dataframe para entender su estructura
-print(df.head())
+#enviar paquete y recibir respuesta
+def send_packet_and_sniff(packet, timeout=2):
+    response = sr1(packet, timeout=timeout)
+    return response
 
-# Análisis de las características de los paquetes
-# Puedes ajustar los nombres de las columnas según tu archivo CSV
-# Aquí asumimos que el CSV tiene columnas como 'ip.src', 'ip.dst', 'tcp.srcport', 'tcp.dstport', 'ip.ttl', etc.
+# Función para analizar la respuesta
+def analyze_response(response):
+    if response is None:
+        print("No response")
+    elif response.haslayer(TCP):
+        tcp_layer = response.getlayer(TCP)
+        print(f"Received TCP packet from {response[IP].src} with flags {tcp_layer.flags}")
+    elif response.haslayer(UDP):
+        print(f"Received UDP packet from {response[IP].src}")
+    elif response.haslayer(ICMP):
+        print(f"Received ICMP packet from {response[IP].src} with type {response[ICMP].type}")
+    else:
+        print(f"Received packet from {response[IP].src}")
 
-# Ejemplo: Agrupar por direcciones IP de origen y calcular estadísticas básicas
-ip_stats = df.groupby('Source').agg({
-    'Length': ['mean', 'std'],  # Usar la columna 'Length' para el tamaño del paquete
-    'No.': 'nunique',           # Usar la columna 'No.' para el identificador único
-    'Time': ['mean', 'std']     # Usar la columna 'Time' para el tiempo
-}).reset_index()
+# Paquete P1: Enviar un paquete TCP desde el puerto 0 al puerto 0
+packet_P1 = IP(dst=target_ip)/TCP(sport=0, dport=0, flags="S")
+response_P1 = send_packet_and_sniff(packet_P1)
+analyze_response(response_P1)
 
-print(ip_stats)
+# Paquete P2: Enviar un paquete TCP desde un puerto distinto de 0 al puerto 0
+packet_P2 = IP(dst=target_ip)/TCP(sport=12345, dport=0, flags="S")
+response_P2 = send_packet_and_sniff(packet_P2)
+analyze_response(response_P2)
 
-# Identificación de patrones únicos para fingerprinting
-# Por ejemplo, dispositivos móviles pueden tener TTL específico y puertos fuente/destino característicos
-mobile_devices = ip_stats[(ip_stats[('Length', 'mean')] < 64) & 
-                          (ip_stats[('No.', 'nunique')] > 1000)]
+# Paquete P3: Enviar un paquete TCP desde el puerto 0 a un puerto abierto
+packet_P3 = IP(dst=target_ip)/TCP(sport=0, dport=open_port, flags="S")
+response_P3 = send_packet_and_sniff(packet_P3)
+analyze_response(response_P3)
 
-print("Posibles dispositivos móviles:")
-print(mobile_devices)
+# Paquete P4: Enviar un paquete TCP desde el puerto 0 a un puerto cerrado
+packet_P4 = IP(dst=target_ip)/TCP(sport=0, dport=closed_port, flags="S")
+response_P4 = send_packet_and_sniff(packet_P4)
+analyze_response(response_P4)
 
-# Puedes seguir refinando las reglas para identificar otros tipos de dispositivos
+# Paquete P5: Enviar un paquete UDP desde el puerto 0 al puerto 0
+packet_P5 = IP(dst=target_ip)/UDP(sport=0, dport=0)
+response_P5 = send_packet_and_sniff(packet_P5)
+analyze_response(response_P5)
+
+# Paquete P6: Enviar un paquete UDP desde el puerto 53 al puerto 0
+packet_P6 = IP(dst=target_ip)/UDP(sport=53, dport=0)
+response_P6 = send_packet_and_sniff(packet_P6)
+analyze_response(response_P6)
+
+# Paquete P7: Enviar un paquete UDP desde el puerto 0 a un puerto cerrado
+packet_P7 = IP(dst=target_ip)/UDP(sport=0, dport=closed_port)
+response_P7 = send_packet_and_sniff(packet_P7)
+analyze_response(response_P7)
