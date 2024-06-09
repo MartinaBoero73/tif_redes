@@ -1,7 +1,7 @@
 from scapy.all import *
 
 #cambiar ip 
-target_ip = "192.168.0.103"
+target_ip = "192.168.1.101"
 open_port = 80   
 closed_port = 81  
 
