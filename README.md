@@ -1,2 +1,3 @@
 # tif_redes
 Trabajo final Redes de Computadoras -  Análisis de tŕafico inusual en puerto 0 y desarrollo de estrategias de fingerprinting y mitigación de ataques DDoS
+En el presete trabajo realizamos un análisis partiendo del caso del puerto 0, el cual al estar reservado y no tener una función asignada puede ser utilizado para un posible ataque, y valiéndonos de que cada sistema operativo presenta una respuesta específica distinta en su tráfico, realizamos fingerprintig (el script utilizado está disponible en "fingerprintig.py") para rastrear los mismos ante un posible ataque DoS, el cual también simulamos y analizamos mediante Wireshark (disponible en las carpetas "capturas_wireshark" y "datos_wireshark").
